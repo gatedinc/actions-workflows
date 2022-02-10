@@ -1,0 +1,55 @@
+name: Update default deployment image
+
+on:
+  workflow_call:
+    inputs:
+      app_name:
+        type: string
+        description: Name of the app that is being updated.
+        required: true
+      image_alias:
+        type: string
+        description: Image alias used in this apps Kustomize config
+        required: true
+      image_repo:
+        type: string
+        description: Image repository host for this application
+        required: true
+      image_tag:
+        type: string
+        description: Image tag that should be used as the new default for deployments.
+        required: true
+    secrets:
+      infra_repo_key:
+        required: true
+
+jobs:
+  update-default-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout infrastructure repository
+        uses: actions/checkout@v2
+        with:
+          repository: gatedinc/infrastructure
+          ssh-key: ${{ secrets.infra_repo_key }}
+          path: infrastructure
+      - name: Update default deployment info
+        env:
+          APP_NAME: ${{ inputs.app_name }}
+          IMAGE_ALIAS: ${{ inputs.image_alias }}
+          IMAGE_REPO: ${{ inputs.image_repo }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |-
+          cd ${GITHUB_WORKSPACE}/infrastructure/qa-envs
+          ./qa_apps.sh update_default
+          
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git diff --quiet || \
+            git add defaults.json && \
+            git commit -m "[ci] Update default image tag for ${APP_NAME} from ${{ github.repository }}" && \
+            git push
