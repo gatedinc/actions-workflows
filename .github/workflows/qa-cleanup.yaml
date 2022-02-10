@@ -17,7 +17,7 @@ on:
         required: true
       image_tag:
         type: string
-        description: Image tag that should be used as the new default for deployments.
+        description: Image tag
         required: true
     secrets:
       infra_repo_key:
