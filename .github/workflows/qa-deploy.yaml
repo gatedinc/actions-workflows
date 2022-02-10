@@ -1,0 +1,83 @@
+name: QA Deployment
+
+on:
+  workflow_call:
+    inputs:
+      app_name:
+        type: string
+        description: Name of the app that is being updated.
+        required: true
+      image_alias:
+        type: string
+        description: Image alias used in this apps Kustomize config
+        required: true
+      image_repo:
+        type: string
+        description: Image repository host for this application
+        required: true
+      image_tag:
+        type: string
+        description: Image tag that should be used as the new default for deployments.
+        required: true
+    secrets:
+      infra_repo_key:
+        required: true
+
+env:
+  APP_NAME: ${{ inputs.app_name }}
+  IMAGE_ALIAS: ${{ inputs.image_alias }}
+  IMAGE_REPO: ${{ inputs.image_repo }}
+  IMAGE_TAG: ${{ inputs.image_tag }}
+
+jobs:
+  qa-deployment:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      deployments: write
+    steps:
+      - name: Checkout infrastructure repository
+        uses: actions/checkout@v2
+        with:
+          repository: gatedinc/infrastructure
+          ssh-key: ${{ secrets.infra_repo_key }}
+          path: infrastructure
+
+      - name: Select QA Environment
+        id: select-qa-env
+        uses: moonswitch/select-qa-env@v0.2.0
+        with:
+          table: qa-envs
+
+      - name: Create QA deployment config file
+        env:
+          QA_LANE: ${{ steps.select-qa-env.outputs.env_name }}
+          QA_FILE: ${{ steps.select-qa-env.outputs.env_name }}.json
+          PR_NUMBER: ${{ github.event.number }}
+          PR_SHA: ${{ github.sha }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          PR_REPO: ${{ github.repository }}
+          URL: ${{ steps.select-qa-env.outputs.url }}
+        run: |-
+          cd ${GITHUB_WORKSPACE}/infrastructure/qa-envs
+          ./qa_apps.sh add
+          
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add . && git diff --cached --quiet || \
+            git commit -m "[ci] Deploy PR-${{ github.event.number }} from ${{ github.repository }}" && \
+            git push
+
+      - name: Create QA Deployment
+        uses: altinukshini/deployment-action@v1.2.6
+        id: deployment
+        with:
+          pr: true
+          pr_id: ${{ github.event.number }}
+          transient_environment: true
+          token: "${{ github.token }}"
+          target_url: https://${{ steps.select-qa-env.outputs.url }}
+          environment: ${{ steps.select-qa-env.outputs.env_name }}
+          initial_status: success
+          ref: ${{ github.event.pull_request.head.ref }}
