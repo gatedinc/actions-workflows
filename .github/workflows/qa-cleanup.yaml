@@ -94,7 +94,10 @@ jobs:
           git config user.email github-actions@github.com
            git add . && git diff --cached --quiet || \
             git commit -m "[ci] Cleanup PR-${{ github.event.number }} from ${{ github.repository }}" && \
-            git push
+            git push && \
+            git status --porcelain
+          
+          echo "QA file has been updated and pushed."
       
       - name: Release QA Environment
         id: release-qa-env
