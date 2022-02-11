@@ -11,13 +11,29 @@ on:
         type: string
         description: Image alias used in this apps Kustomize config
         required: true
-      image_repo:
-        type: string
-        description: Image repository host for this application
-        required: true
       image_tag:
         type: string
         description: Image tag
+        required: true
+      service_account:
+        type: string
+        description: Service Account email to authenticate with
+        required: true
+      workload_identity_provider:
+        type: string
+        description: ID of the workload identity provider
+        required: true
+      gcloud_project_id:
+        type: string
+        description: ID of google cloud project
+        required: true
+      registry:
+        type: string
+        description: Registry for image
+        required: true
+      image_name:
+        type: string
+        description: Name for image
         required: true
     secrets:
       infra_repo_key:
@@ -26,7 +42,7 @@ on:
 env:
   APP_NAME: ${{ inputs.app_name }}
   IMAGE_ALIAS: ${{ inputs.image_alias }}
-  IMAGE_REPO: ${{ inputs.image_repo }}
+  IMAGE_REPO: ${{ inputs.registry }}/${{ inputs.image_name }}
   IMAGE_TAG: ${{ inputs.image_tag }}
 
 jobs:
@@ -37,12 +53,22 @@ jobs:
       id-token: write
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Checkout infrastructure repository
         uses: actions/checkout@v2
         with:
           repository: gatedinc/infrastructure
           ssh-key: ${{ secrets.infra_repo_key }}
           path: infrastructure
+
+      - name: Authenticate Google Cloud Tools
+        uses: ./.github/actions/gcloud-auth
+        with:
+          service_account: ${{ inputs.service_account }}
+          workload_identity_provider: ${{ inputs.workload_identity_provider }}
+          gcloud_project_id: ${{ inputs.gcloud_project_id }}
 
       - name: Select QA Environment
         id: select-qa-env

@@ -27,11 +27,6 @@ on:
         type: string
         description: ID of google cloud project
         required: true
-      docker_host:
-        type: string
-        description: Docker registry host to authorize with gcloud credentials
-        required: false
-        default: us-central1-docker.pkg.dev
       registry:
         type: string
         description: Registry for image
@@ -83,6 +78,7 @@ jobs:
           tags: |
             type=ref,event=pr
             type=raw,value=sha-${{ github.event.pull_request.head.sha }}
+
       - name: Select QA Environment
         id: select-qa-env
         uses: moonswitch/select-qa-env@v0.2.0
