@@ -56,13 +56,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Checkout infrastructure repository
-        uses: actions/checkout@v2
-        with:
-          repository: gatedinc/infrastructure
-          ssh-key: ${{ secrets.infra_repo_key }}
-          path: infrastructure
-
       - name: Authenticate Google Cloud Tools
         uses: gatedinc/actions-workflows/.github/actions/gcloud-auth@main
         with:
@@ -84,6 +77,13 @@ jobs:
         uses: moonswitch/select-qa-env@v0.2.0
         with:
           table: qa-envs
+
+      - name: Checkout infrastructure repository
+        uses: actions/checkout@v2
+        with:
+          repository: gatedinc/infrastructure
+          ssh-key: ${{ secrets.infra_repo_key }}
+          path: infrastructure
 
       - name: Create QA deployment config file
         env:
