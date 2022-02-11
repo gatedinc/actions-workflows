@@ -11,13 +11,34 @@ on:
         type: string
         description: Image alias used in this apps Kustomize config
         required: true
-      image_repo:
-        type: string
-        description: Image repository host for this application
-        required: true
       image_tag:
         type: string
         description: Image tag that should be deployed to qa.
+        required: true
+      service_account:
+        type: string
+        description: Service Account email to authenticate with
+        required: true
+      workload_identity_provider:
+        type: string
+        description: ID of the workload identity provider
+        required: true
+      gcloud_project_id:
+        type: string
+        description: ID of google cloud project
+        required: true
+      docker_host:
+        type: string
+        description: Docker registry host to authorize with gcloud credentials
+        required: false
+        default: us-central1-docker.pkg.dev
+      registry:
+        type: string
+        description: Registry for image
+        required: true
+      image_name:
+        type: string
+        description: Name for image
         required: true
     secrets:
       infra_repo_key:
@@ -26,7 +47,7 @@ on:
 env:
   APP_NAME: ${{ inputs.app_name }}
   IMAGE_ALIAS: ${{ inputs.image_alias }}
-  IMAGE_REPO: ${{ inputs.image_repo }}
+  IMAGE_REPO: ${{ inputs.registry }}/${{ inputs.image_name }}
   IMAGE_TAG: ${{ inputs.image_tag }}
 
 jobs:
@@ -37,6 +58,9 @@ jobs:
       id-token: write
       deployments: write
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Checkout infrastructure repository
         uses: actions/checkout@v2
         with:
@@ -44,6 +68,21 @@ jobs:
           ssh-key: ${{ secrets.infra_repo_key }}
           path: infrastructure
 
+      - name: Authenticate Google Cloud Tools
+        uses: ./.github/actions/gcloud-auth
+        with:
+          service_account: ${{ inputs.service_account }}
+          workload_identity_provider: ${{ inputs.workload_identity_provider }}
+          gcloud_project_id: ${{ inputs.gcloud_project_id }}
+
+      - name: Build & Push Docker Image
+        uses: ./.github/actions/docker-build
+        with:
+          registry: ${{ inputs.registry }}
+          image_name: ${{ inputs.image_name }}
+          tags: |
+            type=ref,event=pr
+            type=raw,value=sha-${{ github.event.pull_request.head.sha }}
       - name: Select QA Environment
         id: select-qa-env
         uses: moonswitch/select-qa-env@v0.2.0
