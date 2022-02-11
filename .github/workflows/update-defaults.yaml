@@ -59,5 +59,9 @@ jobs:
           git config user.email github-actions@github.com
           git diff --quiet || \
             git add defaults.json && \
+            git diff --cached && \
             git commit -m "[ci] Update default image tag for ${APP_NAME} from ${{ github.repository }}" && \
-            git push
+            git push && \
+            git status --porcelain
+
+          echo "Default has been updated and pushed."
