@@ -15,18 +15,6 @@ on:
         type: string
         description: Image tag that should be used as the new default for deployments.
         required: true
-      service_account:
-        type: string
-        description: Service Account email to authenticate with
-        required: true
-      workload_identity_provider:
-        type: string
-        description: ID of the workload identity provider
-        required: true
-      gcloud_project_id:
-        type: string
-        description: ID of google cloud project
-        required: true
       registry:
         type: string
         description: Registry for image
@@ -56,19 +44,6 @@ jobs:
           repository: gatedinc/infrastructure
           ssh-key: ${{ secrets.infra_repo_key }}
           path: infrastructure
-
-      - name: Authenticate Google Cloud Tools
-        uses: ./.github/actions/gcloud-auth
-        with:
-          service_account: ${{ inputs.service_account }}
-          workload_identity_provider: ${{ inputs.workload_identity_provider }}
-          gcloud_project_id: ${{ inputs.gcloud_project_id }}
-
-      - name: Build & Push Docker Image
-        uses: ./.github/actions/docker-build
-        with:
-          registry: ${{ inputs.registry }}
-          image_name: ${{ inputs.image_name }}
 
       - name: Update default deployment info
         env:
