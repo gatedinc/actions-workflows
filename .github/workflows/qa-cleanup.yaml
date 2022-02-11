@@ -64,7 +64,7 @@ jobs:
           path: infrastructure
 
       - name: Authenticate Google Cloud Tools
-        uses: ./.github/actions/gcloud-auth
+        uses:  gatedinc/actions-workflows/.github/actions/gcloud-auth@main
         with:
           service_account: ${{ inputs.service_account }}
           workload_identity_provider: ${{ inputs.workload_identity_provider }}

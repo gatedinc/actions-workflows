@@ -71,7 +71,7 @@ jobs:
           gcloud_project_id: ${{ inputs.gcloud_project_id }}
 
       - name: Build & Push Docker Image
-        uses: ./.github/actions/docker-build
+        uses:  gatedinc/actions-workflows/.github/actions/docker-build@main
         with:
           registry: ${{ inputs.registry }}
           image_name: ${{ inputs.image_name }}
