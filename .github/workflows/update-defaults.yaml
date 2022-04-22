@@ -54,14 +54,21 @@ jobs:
         run: |-
           cd ${GITHUB_WORKSPACE}/infrastructure/qa-envs
           ./qa_apps.sh update_default
-          
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git diff --quiet || \
-            git add defaults.json && \
-            git diff --cached && \
-            git commit -m "[ci] Update default image tag for ${APP_NAME} from ${{ github.repository }}" && \
-            git push && \
-            git status --porcelain
 
-          echo "Default has been updated and pushed."
+          if [ -s "defaults.json" ]; then
+            git config user.name github-actions
+            git config user.email github-actions@github.com
+            git diff --quiet || \
+              git add defaults.json && \
+              git diff --cached && \
+              git commit -m "[ci] Update default image tag for ${APP_NAME} from ${{ github.repository }}" && \
+              git push && \
+              git status --porcelain
+
+            echo "Default has been updated and pushed."
+          else
+            echo "defaults.json is empty. Aborting job."
+            exit 1
+          fi
+          
+          
